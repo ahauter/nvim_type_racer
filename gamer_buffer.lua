@@ -1,5 +1,6 @@
 PATH = "/home/austin/Repositories/Personal"
 local window_id = nil
+local ns = vim.api.nvim_create_namespace("nvim_typr")
 
 local game_buffer = nil
 local M = {}
@@ -11,17 +12,10 @@ function M.IsWindow()
   return false
 end
 
-local function print_args(t)
-  for i, v in ipairs(t) do
-    print("arguement " .. tostring(i))
-    print(tostring(v))
-  end
-end
-
 function M.MakeWindow()
   game_buffer     = vim.api.nvim_create_buf(true, true)
   local buf_type  = "nofile"
-  local file_type = "lua"
+  local file_type = ""
   vim.api.nvim_buf_set_option(game_buffer, 'buftype', buf_type)
   vim.api.nvim_buf_set_option(game_buffer, 'filetype', file_type)
 
@@ -29,6 +23,33 @@ function M.MakeWindow()
   local win_id = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win_id, game_buffer)
   window_id = win_id
+end
+
+function string:split(sub_str)
+  local result = {}
+  local from = 1
+  local from_sub, to_sub = string.find(self, sub_str, from)
+  while from_sub do
+    table.insert(result, string.sub(self, from, from_sub - 1))
+    from = to_sub + 1
+    from_sub, to_sub = string.find(self, sub_str, from)
+  end
+  table.insert(result, string.sub(self, from))
+  return result
+end
+
+function M.SetBuffer(str)
+  local lines = {}
+  if type(str) == "string" then
+    lines = str:split("\n")
+  elseif type(str) == "table" then
+    lines = str
+  end
+  if game_buffer == nil then
+    return
+  end
+  local num_lines = vim.api.nvim_buf_line_count(game_buffer)
+  vim.api.nvim_buf_set_lines(game_buffer, 0, num_lines + 1, false, lines)
 end
 
 function string:endswith(ending)
@@ -99,9 +120,40 @@ function M.MakeRandomCodeBuffer()
   table.insert(main_jobs, git_projects_job)
   vim.fn.jobwait(main_jobs)
   vim.fn.jobwait(open_jobs)
-  for _, file in pairs(file_list) do
-    print(file)
-  end
+  local n = math.random(#file_list)
+  local file_path = file_list[n]
+  local new_text_lines = {}
+  local read_file_job = vim.fn.jobstart(
+    "cat " .. file_path, {
+      on_stdout = function(jobid, data, evt)
+        for _, value in pairs(data) do
+          local new_text = tostring(value)
+          table.insert(new_text_lines, new_text)
+        end
+      end
+    })
+  vim.fn.jobwait({ read_file_job })
+  M.SetBuffer(new_text_lines)
+  print(vim.api.nvim_get_color_by_name("red"))
+  local incom_str = "Incomplete"
+  local incor_str = "Incorrect"
+  vim.api.nvim_set_hl(ns, incom_str, {
+    fg = "Gray",
+    bg = "Yellow",
+    priority = 101,
+  })
+  vim.api.nvim_set_hl(ns, incor_str, {
+    fg = "Red",
+    bg = "Purple",
+    priority = 101,
+  })
+  local hl_incor = vim.api.nvim_get_hl_id_by_name(incor_str)
+  local hl_incom = vim.api.nvim_get_hl_id_by_name(incom_str)
+  vim.api.nvim_buf_set_extmark(game_buffer, ns, 1, 0, {
+    end_row = #new_text_lines,
+    hl_group = hl_incom
+  })
+  print("Set highlight group")
 end
 
 return M
