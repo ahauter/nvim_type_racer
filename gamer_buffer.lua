@@ -1,6 +1,9 @@
 PATH = "/home/austin/Repositories/Personal"
 local window_id = nil
 local ns = vim.api.nvim_create_namespace("nvim_typr")
+local ghost_text = "CmpGhostText"
+local incorrect_text = "Error"
+local buffer_target = {}
 
 local game_buffer = nil
 local M = {}
@@ -122,38 +125,46 @@ function M.MakeRandomCodeBuffer()
   local n = math.random(#file_list)
   local file_path = file_list[n]
   local new_text_lines = {}
-  local long_str = ""
   local read_file_job = vim.fn.jobstart(
     "cat " .. file_path, {
       on_stdout = function(jobid, data, evt)
         for _, value in pairs(data) do
           local new_text = tostring(value)
           table.insert(new_text_lines, new_text)
-          long_str = long_str .. new_text
         end
       end
     })
   vim.fn.jobwait({ read_file_job })
-  M.SetBuffer(new_text_lines)
-  print(vim.api.nvim_get_color_by_name("red"))
-  local incom_str = "Incomplete"
-  local incor_str = "Incorrect"
-  vim.api.nvim_set_hl(ns, incom_str, {
-    fg = "Gray",
-    bg = "Yellow",
+  buffer_target = new_text_lines
+end
+
+function update_state()
+  local current_text = vim.api.nvim_buf_get_lines(
+    game_buffer, 0, -1, false)
+  print(current_text)
+end
+
+function M.StartGame()
+  M.MakeRandomCodeBuffer()
+  local new_buffer = {}
+  for _, line in pairs(buffer_target) do
+    table.insert(new_buffer, "")
+  end
+  M.SetBuffer(new_buffer)
+
+  local i = 0
+  for _, line in pairs(buffer_target) do
+    print(line)
+    vim.api.nvim_buf_set_extmark(game_buffer, ns, i, 0, {
+      virt_text = { { line, ghost_text } },
+      virt_text_pos = 'overlay'
+    })
+    i = i + 1
+  end
+  vim.api.nvim_create_autocmd("TextChangedI", {
+    buffer = game_buffer,
+    callback = update_state
   })
-  vim.api.nvim_set_hl(ns, incor_str, {
-    fg = "Red",
-    bg = "Purple",
-  })
-  local hl_incor = vim.api.nvim_get_hl_id_by_name(incor_str)
-  local hl_incom = vim.api.nvim_get_hl_id_by_name(incom_str)
-  vim.api.nvim_buf_set_extmark(game_buffer, ns, 0, 0, {
-    hl_group = hl_incom,
-    virt_text = { { long_str, "CmpGhostText" } },
-    virt_text_pos = "overlay"
-  })
-  print("Set highlight group")
 end
 
 return M
