@@ -16,6 +16,12 @@ local function clear_errors()
     vim.api.nvim_buf_del_extmark(game_buffer, ns, err)
     err = table.remove(errors_table)
   end
+
+  local ext_id = table.remove(extmark_table)
+  while ext_id ~= nil do
+    vim.api.nvim_buf_del_extmark(game_buffer, ns, ext_id)
+    ext_id = table.remove(extmark_table)
+  end
 end
 
 function M.IsWindow()
@@ -168,18 +174,16 @@ local function update_state()
           }
         ))
       end
-      local remaining_line = target_line:sub(#actual_line + 1, -1)
-      local ext_id = extmark_table[i]
-      vim.api.nvim_buf_del_extmark(game_buffer, ns, ext_id)
-      extmark_table[i] = vim.api.nvim_buf_set_extmark(
-        game_buffer,
-        ns, i - 1,
-        #actual_line, {
-          virt_text = { { remaining_line, ghost_text } },
-          virt_text_pos = 'overlay'
-        }
-      )
     end
+    local remaining_line = target_line:sub(#actual_line + 1, -1)
+    table.insert(extmark_table, vim.api.nvim_buf_set_extmark(
+      game_buffer,
+      ns, i - 1,
+      #actual_line, {
+        virt_text = { { remaining_line, ghost_text } },
+        virt_text_pos = 'overlay'
+      }
+    ))
   end
 end
 
@@ -192,10 +196,11 @@ function M.StartGame()
   M.SetBuffer(new_buffer)
   local i = 1
   for _, line in pairs(buffer_target) do
-    extmark_table[i] = vim.api.nvim_buf_set_extmark(game_buffer, ns, i - 1, 0, {
-      virt_text = { { line, ghost_text } },
-      virt_text_pos = 'overlay'
-    })
+    table.insert(extmark_table,
+      vim.api.nvim_buf_set_extmark(game_buffer, ns, i - 1, 0, {
+        virt_text = { { line, ghost_text } },
+        virt_text_pos = 'overlay'
+      }))
     i = i + 1
   end
   local update_commands = {
