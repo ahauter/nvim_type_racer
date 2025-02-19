@@ -4,6 +4,7 @@ local ns = vim.api.nvim_create_namespace("nvim_typr")
 local ghost_text = "CmpGhostText"
 local incorrect_text = "Error"
 local buffer_target = {}
+local extmark_table = {}
 
 local game_buffer = nil
 local M = {}
@@ -140,8 +141,28 @@ end
 
 function update_state()
   local current_text = vim.api.nvim_buf_get_lines(
-    game_buffer, 0, -1, false)
-  print(current_text)
+    game_buffer, 0, -1, false
+  )
+
+  for i = 1, #current_text do
+    local target_line = buffer_target[i]
+    local actual_line = current_text[i]
+    for pos = 1, #actual_line do
+      local target_char = target_line[pos]
+      local actual_char = actual_line[pos]
+      local remaining_line = target_line:sub(#actual_line + 1, -1)
+      local ext_id = extmark_table[i]
+      vim.api.nvim_buf_del_extmark(game_buffer, ns, ext_id)
+      extmark_table[i] = vim.api.nvim_buf_set_extmark(
+        game_buffer,
+        ns, i - 1,
+        #actual_line, {
+          virt_text = { { remaining_line, ghost_text } },
+          virt_text_pos = 'overlay'
+        }
+      )
+    end
+  end
 end
 
 function M.StartGame()
@@ -151,11 +172,9 @@ function M.StartGame()
     table.insert(new_buffer, "")
   end
   M.SetBuffer(new_buffer)
-
-  local i = 0
+  local i = 1
   for _, line in pairs(buffer_target) do
-    print(line)
-    vim.api.nvim_buf_set_extmark(game_buffer, ns, i, 0, {
+    extmark_table[i] = vim.api.nvim_buf_set_extmark(game_buffer, ns, i - 1, 0, {
       virt_text = { { line, ghost_text } },
       virt_text_pos = 'overlay'
     })
