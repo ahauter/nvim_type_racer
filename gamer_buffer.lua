@@ -5,9 +5,18 @@ local ghost_text = "CmpGhostText"
 local incorrect_text = "Error"
 local buffer_target = {}
 local extmark_table = {}
+local errors_table = {}
 
 local game_buffer = nil
 local M = {}
+
+local function clear_errors()
+  local err = table.remove(errors_table)
+  while err ~= nil do
+    vim.api.nvim_buf_del_extmark(game_buffer, ns, err)
+    err = table.remove(errors_table)
+  end
+end
 
 function M.IsWindow()
   if window_id ~= nil then
@@ -139,17 +148,26 @@ function M.MakeRandomCodeBuffer()
   buffer_target = new_text_lines
 end
 
-function update_state()
+local function update_state()
   local current_text = vim.api.nvim_buf_get_lines(
     game_buffer, 0, -1, false
   )
-
+  clear_errors()
   for i = 1, #current_text do
     local target_line = buffer_target[i]
     local actual_line = current_text[i]
     for pos = 1, #actual_line do
-      local target_char = target_line[pos]
-      local actual_char = actual_line[pos]
+      local target_char = target_line:sub(pos, pos)
+      local actual_char = actual_line:sub(pos, pos)
+
+      if target_char ~= actual_char then
+        table.insert(errors_table, vim.api.nvim_buf_set_extmark(
+          game_buffer, ns, i - 1, pos - 1, {
+            virt_text = { { tostring(actual_char), incorrect_text } },
+            virt_text_pos = 'overlay'
+          }
+        ))
+      end
       local remaining_line = target_line:sub(#actual_line + 1, -1)
       local ext_id = extmark_table[i]
       vim.api.nvim_buf_del_extmark(game_buffer, ns, ext_id)
@@ -180,10 +198,13 @@ function M.StartGame()
     })
     i = i + 1
   end
-  vim.api.nvim_create_autocmd("TextChangedI", {
-    buffer = game_buffer,
-    callback = update_state
-  })
+  local update_commands = { "TextChangedT", "TextChangedI", "ModeChanged", "TextYankPost", "TextChanged", "InsertLeave" }
+  for _, cmd in pairs(update_commands) do
+    vim.api.nvim_create_autocmd(cmd, {
+      buffer = game_buffer,
+      callback = update_state
+    })
+  end
 end
 
 return M
