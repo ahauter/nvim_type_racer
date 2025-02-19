@@ -153,7 +153,7 @@ local function update_state()
     game_buffer, 0, -1, false
   )
   clear_errors()
-  for i = 1, #current_text do
+  for i = 1, #buffer_target do
     local target_line = buffer_target[i]
     local actual_line = current_text[i]
     for pos = 1, #actual_line do
@@ -198,7 +198,14 @@ function M.StartGame()
     })
     i = i + 1
   end
-  local update_commands = { "TextChangedT", "TextChangedI", "ModeChanged", "TextYankPost", "TextChanged", "InsertLeave" }
+  local update_commands = {
+    "TextChangedI",
+    "TextYankPost",
+    "TextChanged",
+    "CursorMoved",
+    "CursorMovedI",
+    "InsertChange",
+  }
   for _, cmd in pairs(update_commands) do
     vim.api.nvim_create_autocmd(cmd, {
       buffer = game_buffer,
