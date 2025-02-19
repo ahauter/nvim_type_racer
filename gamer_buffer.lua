@@ -109,7 +109,6 @@ function M.MakeRandomCodeBuffer()
           if p_name ~= "" then
             local job = getGitFiles(new_path)
             if job ~= nil then
-              print(new_path .. " => " .. job)
               table.insert(open_jobs, job)
             end
           end
@@ -123,12 +122,14 @@ function M.MakeRandomCodeBuffer()
   local n = math.random(#file_list)
   local file_path = file_list[n]
   local new_text_lines = {}
+  local long_str = ""
   local read_file_job = vim.fn.jobstart(
     "cat " .. file_path, {
       on_stdout = function(jobid, data, evt)
         for _, value in pairs(data) do
           local new_text = tostring(value)
           table.insert(new_text_lines, new_text)
+          long_str = long_str .. new_text
         end
       end
     })
@@ -140,18 +141,17 @@ function M.MakeRandomCodeBuffer()
   vim.api.nvim_set_hl(ns, incom_str, {
     fg = "Gray",
     bg = "Yellow",
-    priority = 101,
   })
   vim.api.nvim_set_hl(ns, incor_str, {
     fg = "Red",
     bg = "Purple",
-    priority = 101,
   })
   local hl_incor = vim.api.nvim_get_hl_id_by_name(incor_str)
   local hl_incom = vim.api.nvim_get_hl_id_by_name(incom_str)
-  vim.api.nvim_buf_set_extmark(game_buffer, ns, 1, 0, {
-    end_row = #new_text_lines,
-    hl_group = hl_incom
+  vim.api.nvim_buf_set_extmark(game_buffer, ns, 0, 0, {
+    hl_group = hl_incom,
+    virt_text = { { long_str, "CmpGhostText" } },
+    virt_text_pos = "overlay"
   })
   print("Set highlight group")
 end
