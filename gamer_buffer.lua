@@ -167,9 +167,13 @@ local function update_state()
       local actual_char = actual_line:sub(pos, pos)
 
       if target_char ~= actual_char then
+        local err_val = tostring(actual_char)
+        if err_val:match("%s") ~= nil then
+          err_val = tostring(target_char)
+        end
         table.insert(errors_table, vim.api.nvim_buf_set_extmark(
           game_buffer, ns, i - 1, pos - 1, {
-            virt_text = { { tostring(actual_char), incorrect_text } },
+            virt_text = { { err_val, incorrect_text } },
             virt_text_pos = 'overlay'
           }
         ))
