@@ -146,6 +146,13 @@ function M.MakeRandomCodeBuffer()
       on_stdout = function(jobid, data, evt)
         for _, value in pairs(data) do
           local new_text = tostring(value)
+          new_text = string.gsub(
+            new_text,
+            "^\t+",
+            function(tabs)
+              return (' '):rep(2 * #tabs)
+            end
+          )
           table.insert(new_text_lines, new_text)
         end
       end
