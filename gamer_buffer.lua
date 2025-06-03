@@ -38,7 +38,7 @@ function M.MakeWindow()
   vim.api.nvim_buf_set_option(game_buffer, 'buftype', buf_type)
   vim.api.nvim_buf_set_option(game_buffer, 'filetype', file_type)
 
-  vim.cmd("vsplit")
+  --vim.cmd("vsplit")
   local win_id = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win_id, game_buffer)
   window_id = win_id
