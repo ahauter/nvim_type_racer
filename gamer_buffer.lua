@@ -78,7 +78,7 @@ end
 local file_list = {}
 local function getGitFiles(path)
   if string.match(path, "llama") then
-    return
+    return {}
   end
   local git_files_job = vim.fn.jobstart(
     "git ls-files",
@@ -138,6 +138,7 @@ function M.MakeRandomCodeBuffer()
   table.insert(main_jobs, git_projects_job)
   vim.fn.jobwait(main_jobs)
   vim.fn.jobwait(open_jobs)
+  math.randomseed(os.time())
   local n = math.random(#file_list)
   local file_path = file_list[n]
   local new_text_lines = {}
