@@ -167,9 +167,23 @@ local function update_state()
     game_buffer, 0, -1, false
   )
   clear_errors()
+
+  if #current_text < #buffer_target then
+    local new_table = {}
+    for i = 1, (#buffer_target - #current_text) do
+      new_table[i] = ""
+    end
+    vim.api.nvim_buf_set_lines(
+      game_buffer, #current_text, #buffer_target, false, new_table
+    )
+  end
+
   for i = 1, #buffer_target do
     local target_line = buffer_target[i]
     local actual_line = current_text[i]
+    if actual_line == nil then
+      actual_line = ""
+    end
     for pos = 1, #actual_line do
       local target_char = target_line:sub(pos, pos)
       local actual_char = actual_line:sub(pos, pos)
@@ -196,6 +210,16 @@ local function update_state()
         virt_text_pos = 'overlay'
       }
     ))
+  end
+  -- Remove empty lines at the bottom
+  print("Game buffer lines")
+  print(#buffer_target)
+  print("Current text lines")
+  print(#current_text)
+  if #buffer_target < #current_text then
+    vim.api.nvim_buf_set_lines(
+      game_buffer, #buffer_target, #current_text, true, {}
+    )
   end
 end
 
