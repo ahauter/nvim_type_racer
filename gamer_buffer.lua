@@ -212,10 +212,6 @@ local function update_state()
     ))
   end
   -- Remove empty lines at the bottom
-  print("Game buffer lines")
-  print(#buffer_target)
-  print("Current text lines")
-  print(#current_text)
   if #buffer_target < #current_text then
     vim.api.nvim_buf_set_lines(
       game_buffer, #buffer_target, #current_text, true, {}
