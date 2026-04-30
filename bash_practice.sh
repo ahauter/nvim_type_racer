@@ -25,6 +25,7 @@ while true; do
   VERIFY_PROMPT="Problem: $PROBLEM
 Command: $USER_COMMAND
 Output (exit code $EXIT_CODE): $COMMAND_OUTPUT
+If the command expects input or gives an output that is unexpected, judge based on formal correctness, not on the actual output.
 Reply with ONLY the word 'true' or 'false'. Nothing else."
 
   VERDICT=$(claude -p "$VERIFY_PROMPT" | head -n1 | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
